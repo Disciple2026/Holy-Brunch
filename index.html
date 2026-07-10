@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Holy Brunch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --cream: #121110;
+    --cream-2: #1E1A15;
+    --forest: #C9A227;
+    --forest-2: #F3E9D6;
+    --gold: #C9A227;
+    --gold-2: #E8CD8A;
+    --terracotta: #A6231F;
+    --navy: #16233B;
+    --ink: #F3E9D6;
+    --line: rgba(201,162,39,0.22);
+    --radius: 18px;
+    --shadow: 0 18px 40px -18px rgba(0,0,0,0.6);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3, .display{
+    font-family:'Fraunces', serif;
+    margin:0;
+    color:var(--forest-2);
+  }
+  .mono{ font-family:'Space Mono', monospace; }
+  a{color:inherit;}
+  img{max-width:100%;display:block;}
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* subtle grain / texture backdrop */
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.045;
+    background-image:radial-gradient(circle at 1px 1px, #C9A227 1px, transparent 0);
+    background-size:22px 22px;
+  }
+
+  /* ---------- NAV ---------- */
+  .nav{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px;
+    background:rgba(18,17,16,0.86);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces', serif; font-weight:700; font-size:1.05rem;
+    letter-spacing:0.01em;
+  }
+  .brand .dot{ color:var(--terracotta); }
+  .nav a.cta-mini{
+    font-family:'Work Sans', sans-serif; font-weight:600; font-size:.85rem;
+    background:var(--forest); color:#1B1712;
+    padding:10px 18px; border-radius:999px; text-decoration:none;
+    transition:transform .2s ease, background .2s ease, color .2s ease;
+  }
+  .nav a.cta-mini:hover{ background:var(--terracotta); color:var(--forest-2); transform:translateY(-1px); }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:76px 24px 60px;
+    text-align:center;
+    background:
+      radial-gradient(600px 300px at 15% -10%, rgba(166,35,31,0.28), transparent 60%),
+      radial-gradient(600px 320px at 90% 0%, rgba(201,162,39,0.16), transparent 60%);
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Space Mono', monospace; font-size:.75rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--forest);
+    background:var(--cream-2); border:1px solid var(--line);
+    padding:7px 14px; border-radius:999px; margin-bottom:26px;
+  }
+  .eyebrow::before{ content:"✦"; color:var(--terracotta); }
+  .hero h1{
+    font-size:clamp(2.4rem, 6vw, 4.6rem);
+    line-height:1.04;
+    font-weight:700;
+    max-width:900px;
+    margin:0 auto;
+  }
+  .hero h1 em{
+    font-style:italic; font-weight:500; color:var(--terracotta);
+  }
+  .hero p.sub{
+    max-width:560px; margin:22px auto 0;
+    font-size:1.08rem; line-height:1.6; color:rgba(243,233,214,0.68);
+  }
+  .hero-ctas{
+    margin-top:34px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
+  }
+  .btn{
+    font-family:'Work Sans', sans-serif; font-weight:600; font-size:.95rem;
+    padding:15px 30px; border-radius:999px; border:none; cursor:pointer;
+    text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+  .btn-primary{ background:var(--terracotta); color:#FFF7F0; box-shadow:0 10px 24px -10px rgba(166,35,31,0.55); }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 16px 30px -12px rgba(166,35,31,0.7); }
+  .btn-ghost{ background:transparent; color:var(--forest-2); border:1.5px solid var(--forest-2); }
+  .btn-ghost:hover{ background:var(--forest-2); color:var(--cream); }
+
+  .fraternal-row{
+    margin-top:52px; display:flex; justify-content:center; gap:34px; flex-wrap:wrap;
+  }
+  .fraternal-row .item{
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    font-family:'Space Mono', monospace; font-size:.72rem; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--forest);
+  }
+  .fraternal-row .icon{
+    width:46px; height:46px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--cream-2); border:1px solid var(--line); font-size:1.25rem;
+  }
+
+  /* ---------- STATUS / SIGNATURE SECTION ---------- */
+  .status{
+    background:
+      radial-gradient(600px 300px at 88% -10%, rgba(201,162,39,0.10), transparent 60%),
+      radial-gradient(500px 260px at 5% 100%, rgba(166,35,31,0.16), transparent 60%),
+      var(--cream-2);
+    color:var(--ink);
+    padding:70px 24px 76px;
+    position:relative;
+    overflow:hidden;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .status .wrap{ position:relative; z-index:1; }
+  .status-head{ text-align:center; max-width:560px; margin:0 auto 48px; }
+  .status-head .eyebrow{ background:var(--cream); border-color:var(--line); color:var(--terracotta); }
+  .status-head h2{ color:var(--forest-2); font-size:clamp(1.7rem,3.4vw,2.4rem); }
+  .status-head p{ color:rgba(243,233,214,0.62); margin-top:12px; line-height:1.6; }
+
+  .status-grid{
+    display:grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap:40px;
+    align-items:center;
+  }
+  @media (max-width: 780px){ .status-grid{ grid-template-columns:1fr; } }
+
+  /* flame gauge */
+  .gauge-card{
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:32px;
+    display:flex; align-items:center; gap:28px;
+    box-shadow:var(--shadow);
+  }
+  .flame-box{ position:relative; width:110px; height:150px; flex:none; }
+  .flame-box svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .flame-outline path{ fill:none; stroke:rgba(201,162,39,0.3); stroke-width:2.2; }
+  .flame-fill path{ fill:url(#flameGrad); }
+  .gauge-copy{ flex:1; }
+  .gauge-num{ font-family:'Space Mono', monospace; font-size:2.5rem; font-weight:700; color:var(--terracotta); line-height:1; }
+  .gauge-num span{ font-size:1.2rem; color:rgba(243,233,214,0.42); font-weight:400; }
+  .gauge-label{ margin-top:8px; font-size:.9rem; color:rgba(243,233,214,0.6); }
+  .gauge-track{
+    margin-top:16px; height:8px; border-radius:999px;
+    background:rgba(243,233,214,0.1); overflow:hidden;
+  }
+  .gauge-track-fill{
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--terracotta), var(--gold));
+    width:0%; transition:width .6s ease;
+  }
+  .gauge-alert{ margin-top:10px; font-size:.78rem; color:var(--terracotta); font-family:'Space Mono',monospace; display:none; }
+
+  /* countdown */
+  .countdown-card{
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:32px;
+    box-shadow:var(--shadow);
+  }
+  .countdown-title{
+    font-family:'Space Mono', monospace; font-size:.75rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--forest); margin-bottom:18px;
+  }
+  .countdown-blocks{ display:flex; gap:12px; }
+  .cblock{
+    flex:1; text-align:center;
+    background:var(--cream-2); border:1.5px solid rgba(201,162,39,0.4);
+    border-radius:12px; padding:16px 6px;
+  }
+  .cblock .num{ font-family:'Space Mono', monospace; font-weight:700; font-size:clamp(1.5rem,3.2vw,2rem); color:var(--terracotta); }
+  .cblock .lbl{ margin-top:4px; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(243,233,214,0.45); }
+  .countdown-date{ margin-top:16px; font-size:.85rem; color:rgba(243,233,214,0.6); }
+
+  /* ---------- FORM ---------- */
+  .form-section{ padding:84px 24px; }
+  .form-head{ text-align:center; max-width:560px; margin:0 auto 44px; }
+  .form-head h2{ font-size:clamp(1.8rem,3.6vw,2.5rem); }
+  .form-head p{ margin-top:12px; color:rgba(243,233,214,0.62); line-height:1.6; }
+
+  .ticket-card{
+    max-width:640px; margin:0 auto;
+    background:var(--cream-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    position:relative;
+    padding:44px 40px 40px;
+  }
+  .ticket-card::before, .ticket-card::after{
+    content:""; position:absolute; width:26px; height:26px;
+    background:var(--cream); border-radius:50%; top:50%; transform:translateY(-50%);
+  }
+  .ticket-card::before{ left:-13px; }
+  .ticket-card::after{ right:-13px; }
+  .perf{
+    position:absolute; left:36px; right:36px; top:0;
+    border-top:2px dashed var(--line);
+  }
+
+  .field{ margin-bottom:20px; }
+  .field label{
+    display:block; font-family:'Space Mono', monospace; font-size:.72rem;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--forest);
+    margin-bottom:8px;
+  }
+  .field .opt{ color:rgba(243,233,214,0.4); text-transform:none; letter-spacing:0; font-family:'Work Sans',sans-serif; }
+  .field input, .field select{
+    width:100%; padding:13px 15px; font-family:'Work Sans', sans-serif; font-size:.98rem;
+    border:1.5px solid var(--line); border-radius:10px; background:#F7EFDD; color:#241E17;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:focus, .field select:focus{
+    outline:none; border-color:var(--terracotta);
+    box-shadow:0 0 0 3px rgba(166,35,31,0.22);
+  }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:560px){ .row2{ grid-template-columns:1fr; } }
+
+  .submit-btn{
+    width:100%; justify-content:center; margin-top:8px; font-size:1rem; padding:16px;
+  }
+  .submit-btn[disabled]{ opacity:.55; cursor:not-allowed; transform:none !important; }
+  .form-msg{
+    margin-top:14px; font-size:.85rem; text-align:center; min-height:1.2em;
+  }
+  .form-msg.error{ color:var(--terracotta); }
+  .form-msg.info{ color:var(--forest); }
+
+  .full-banner{
+    display:none; text-align:center; padding:28px; border-radius:14px;
+    background:rgba(166,35,31,0.14); border:1px solid rgba(166,35,31,0.4); color:#E8998C;
+    font-family:'Space Mono', monospace; font-size:.85rem; letter-spacing:.04em;
+  }
+
+  /* ---------- CONFIRMATION ---------- */
+  .confirm{ display:none; }
+  .confirm-card{
+    max-width:420px; margin:0 auto;
+    background:var(--cream-2); color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:20px; overflow:hidden; box-shadow:var(--shadow);
+    position:relative;
+  }
+  .confirm-top{ padding:30px 30px 20px; text-align:center; background:linear-gradient(180deg, rgba(166,35,31,0.14), transparent); }
+  .confirm-top .eyebrow{ background:var(--cream); border-color:var(--line); color:var(--terracotta); }
+  .confirm-top h3{ color:var(--forest-2); font-size:1.6rem; margin-top:10px; }
+  .confirm-num{
+    font-family:'Space Mono', monospace; font-size:.85rem; color:var(--terracotta);
+    letter-spacing:.08em; margin-top:6px;
+  }
+  .confirm-divider{
+    position:relative; height:0; border-top:2px dashed var(--line); margin:0 0;
+  }
+  .confirm-divider::before, .confirm-divider::after{
+    content:""; position:absolute; width:22px; height:22px; background:var(--cream);
+    border-radius:50%; top:-11px;
+  }
+  .confirm-divider::before{ left:-11px; } .confirm-divider::after{ right:-11px; }
+  .confirm-bottom{ padding:22px 30px 30px; text-align:center; }
+  .confirm-bottom p{ font-size:.88rem; color:rgba(243,233,214,0.62); line-height:1.6; }
+  .qr-wrap{ display:flex; justify-content:center; margin:18px 0; }
+  .qr-wrap img{ width:130px; height:130px; border-radius:10px; background:#fff; padding:8px; }
+  .confirm-back{
+    display:inline-block; margin-top:10px; font-size:.8rem; color:var(--terracotta);
+    text-decoration:underline; cursor:pointer; background:none; border:none; font-family:inherit;
+  }
+
+  footer{
+    padding:36px 24px; text-align:center; color:rgba(243,233,214,0.4); font-size:.82rem;
+    font-family:'Space Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<nav class="nav">
+  <div class="brand">Refuge pour la Restauration <span class="dot">×</span> Christ's Lovers</div>
+  <a href="#inscription" class="cta-mini">Je m'inscris</a>
+</nav>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Refuge pour la Restauration</span>
+    <h1>Une famille, une foi,un feu.<br><em>Holy Brunch</em></h1>
+    <p class="sub">Refuge pour la Restauration et Christ's Lovers fusionnent leur activité pour vous offrir un pique-nique gratuit, ouvert à tous, pour partager, grandir et créer des liens fraternels — Ne ratez surtout pas.</p>
+    <div class="hero-ctas">
+      <a href="#inscription" class="btn btn-primary">Réserver ma place →</a>
+      <a href="#details" class="btn btn-ghost">Voir les détails</a>
+    </div>
+    <div class="fraternal-row">
+      <div class="item"><span class="icon">👪</span>Une famille</div>
+      <div class="item"><span class="icon">📖</span>Une foi</div>
+      <div class="item"><span class="icon">🔥</span>Un feu</div>
+      <div class="item"><span class="icon">🤝</span>Liens fraternels</div>
+    </div>
+  </div>
+</section>
+
+<section class="status" id="details">
+  <div class="wrap">
+    <div class="status-head">
+      <span class="eyebrow">En direct</span>
+      <h2>Oh ! qu’il est bon et qu’il est agréable pour des frères d’habiter unis ensemble ! </h2>
+      <p>C’est comme de l’excellente huile répandue sur la tête, qui coule le long de la barbe, la barbe d’Aaron, et qui descend sur le col de ses vêtements.C’est comme la rosée de l’Hermon qui descend sur les montagnes de Sion. C’est là que Jéhovah a décrété que soit sa bénédiction, la vie éternelle.</p>
+    </div>
+    <div class="status-grid">
+      <div class="gauge-card">
+        <div class="flame-box">
+          <svg viewBox="0 0 100 140" class="flame-outline">
+            <path d="M50 6 C22 38 16 66 30 92 C24 108 34 132 50 136 C66 132 76 108 70 92 C84 66 78 38 50 6 Z"/>
+          </svg>
+          <svg viewBox="0 0 100 140" class="flame-fill">
+            <defs>
+              <linearGradient id="flameGrad" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="#A6231F"/>
+                <stop offset="55%" stop-color="#C9A227"/>
+                <stop offset="100%" stop-color="#F0DFA0"/>
+              </linearGradient>
+              <clipPath id="flameClip">
+                <rect id="flameClipRect" x="0" y="140" width="100" height="0"/>
+              </clipPath>
+            </defs>
+            <path clip-path="url(#flameClip)" d="M50 6 C22 38 16 66 30 92 C24 108 34 132 50 136 C66 132 76 108 70 92 C84 66 78 38 50 6 Z"/>
+          </svg>
+        </div>
+        <div class="gauge-copy">
+          <div class="gauge-num" id="gaugeNum">…<span> / 200</span></div>
+          <div class="gauge-label" id="gaugeLabel">places déjà réservées</div>
+          <div class="gauge-track"><div class="gauge-track-fill" id="gaugeTrackFill"></div></div>
+          <div class="gauge-alert" id="gaugeAlert">⚠ Il ne reste presque plus de places !</div>
+        </div>
+      </div>
+
+      <div class="countdown-card">
+        <div class="countdown-title">Inscriptions ouvertes jusqu'au 21 juillet</div>
+        <div class="countdown-blocks">
+          <div class="cblock"><div class="num mono" id="cdDays">--</div><div class="lbl">jours</div></div>
+          <div class="cblock"><div class="num mono" id="cdHours">--</div><div class="lbl">heures</div></div>
+          <div class="cblock"><div class="num mono" id="cdMin">--</div><div class="lbl">min</div></div>
+          <div class="cblock"><div class="num mono" id="cdSec">--</div><div class="lbl">sec</div></div>
+        </div>
+        <div class="countdown-date">Jusqu'au 20 juillet, 10H59.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="form-section" id="inscription">
+  <div class="wrap">
+    <div class="form-head">
+      <h2>Réserve ta place</h2>
+      <p>Renseigne tes informations ci-dessous. Et reçoit ton ticket par mail juste après.</p>
+    </div>
+
+    <div class="full-banner" id="fullBanner">
+      🔥 LES 200 PLACES SONT COMPLÈTES — merci pour votre engouement !<br>Contacte l'organisation si tu veux rejoindre la liste.
+    </div>
+
+    <form class="ticket-card" id="regForm">
+      <div class="perf"></div>
+      <div class="row2">
+        <div class="field">
+          <label for="prenom">Prénom</label>
+          <input type="text" id="prenom" required autocomplete="given-name">
+        </div>
+        <div class="field">
+          <label for="nom">Nom</label>
+          <input type="text" id="nom" required autocomplete="family-name">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="communaute">Communauté / Église</label>
+          <input type="text" id="communaute" required placeholder="Ex : MSA Burkina">
+        </div>
+        <div class="field">
+          <label for="ville">Ville</label>
+          <input type="text" id="ville" required placeholder="Ex : Bobo">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="whatsapp">Numéro WhatsApp</label>
+          <input type="tel" id="whatsapp" required placeholder="+226 6 00 00 00 00">
+        </div>
+        <div class="field">
+          <label for="email">Adresse e-mail</label>
+          <input type="email" id="email" required placeholder="pour recevoir ton ticket">
+        </div>
+      </div>
+      <div class="field">
+        <label for="decouverte">Comment as-tu eu connaissance de cette activité ? <span class="opt">(facultatif)</span></label>
+        <input type="text" id="decouverte" placeholder="Ami, réseaux sociaux, église...">
+      </div>
+
+      <button type="submit" class="btn btn-primary submit-btn" id="submitBtn">Confirmer mon inscription 🔥</button>
+      <div class="form-msg" id="formMsg"></div>
+    </form>
+
+    <div class="confirm" id="confirmBox">
+      <div class="confirm-card">
+        <div class="confirm-top">
+          <span class="eyebrow">Inscription confirmée</span>
+          <h3 id="confirmName">Bienvenue !</h3>
+          <div class="confirm-num mono" id="confirmTicketNum">HB-000</div>
+        </div>
+        <div class="confirm-divider"></div>
+        <div class="confirm-bottom">
+          <p>Ton ticket vient d'être envoyé à <strong id="confirmEmail"></strong>. Présente-le (ou ce QR code) le jour J.</p>
+          <div class="qr-wrap"><img id="confirmQr" alt="QR code du ticket"></div>
+          <p>Une famille, une foi, un feu — à très vite ✨</p>
+          <button class="confirm-back" id="backBtn">← Inscrire quelqu'un d'autre</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>HOLY BRUNCH — INSCRIPTIONS JUSQU'AU 21 JUILLET A 10H59.</footer>
+
+<script>
+/* ============ CONFIGURATION — à compléter par Jaurès ============ */
+const CONFIG = {
+  SUPABASE_URL: "https://kmnavmsbdahwqftjhvzj.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8",
+  MAX_PLACES: 200,
+  EVENT_DEADLINE: "2026-07-21T10:59:59"
+};
+/* ================================================================= */
+
+const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+let currentCount = 0;
+
+async function refreshCount(){
+  try{
+    const { data, error } = await supabase.rpc('get_registration_count');
+    if(error) throw error;
+    currentCount = data ?? 0;
+    updateGauge(currentCount);
+  }catch(e){
+    console.error("Erreur comptage:", e);
+  }
+}
+
+function updateGauge(count){
+  const pct = Math.min(100, (count / CONFIG.MAX_PLACES) * 100);
+  document.getElementById('gaugeNum').innerHTML = count + '<span> / ' + CONFIG.MAX_PLACES + '</span>';
+  document.getElementById('gaugeTrackFill').style.width = pct + '%';
+
+  const rect = document.getElementById('flameClipRect');
+  const fillHeight = 140 * (pct/100);
+  rect.setAttribute('y', 140 - fillHeight);
+  rect.setAttribute('height', fillHeight);
+
+  const alertEl = document.getElementById('gaugeAlert');
+  const labelEl = document.getElementById('gaugeLabel');
+  if(count >= CONFIG.MAX_PLACES){
+    labelEl.textContent = "places réservées — COMPLET";
+    alertEl.style.display = 'none';
+    showFull();
+  } else if(count >= CONFIG.MAX_PLACES * 0.85){
+    alertEl.style.display = 'block';
+  } else {
+    alertEl.style.display = 'none';
+  }
+}
+
+function showFull(){
+  document.getElementById('regForm').style.display = 'none';
+  document.getElementById('fullBanner').style.display = 'block';
+}
+
+/* Countdown */
+function tickCountdown(){
+  const deadline = new Date(CONFIG.EVENT_DEADLINE).getTime();
+  const now = Date.now();
+  const diff = Math.max(0, deadline - now);
+
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+
+  document.getElementById('cdDays').textContent = String(d).padStart(2,'0');
+  document.getElementById('cdHours').textContent = String(h).padStart(2,'0');
+  document.getElementById('cdMin').textContent = String(m).padStart(2,'0');
+  document.getElementById('cdSec').textContent = String(s).padStart(2,'0');
+
+  if(diff <= 0){
+    showFull();
+  }
+}
+setInterval(tickCountdown, 1000);
+tickCountdown();
+refreshCount();
+
+/* Form submit */
+const form = document.getElementById('regForm');
+const msgEl = document.getElementById('formMsg');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msgEl.textContent = '';
+  msgEl.className = 'form-msg';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Inscription en cours...';
+
+  const payload = {
+    prenom: document.getElementById('prenom').value.trim(),
+    nom: document.getElementById('nom').value.trim(),
+    communaute: document.getElementById('communaute').value.trim(),
+    ville: document.getElementById('ville').value.trim(),
+    whatsapp: document.getElementById('whatsapp').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    decouverte: document.getElementById('decouverte').value.trim() || null
+  };
+
+  try{
+    // re-check count just before inserting to avoid overshooting 200
+    await refreshCount();
+    if(currentCount >= CONFIG.MAX_PLACES){
+      showFull();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('inscriptions')
+      .insert(payload)
+      .select('ticket_number')
+      .single();
+
+    if(error) throw error;
+
+    const ticketNumber = data.ticket_number;
+    const ticketCode = 'HB-' + String(ticketNumber).padStart(3, '0');
+    const qrData = encodeURIComponent(ticketCode + ' | ' + payload.prenom + ' ' + payload.nom);
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=' + qrData;
+
+    // envoi automatique du ticket par mail via la fonction serveur (Resend)
+    const { error: fnError } = await supabase.functions.invoke('send-ticket', {
+      body: {
+        to_email: payload.email,
+        to_name: payload.prenom + ' ' + payload.nom,
+        prenom: payload.prenom,
+        communaute: payload.communaute,
+        ville: payload.ville,
+        ticket_number: ticketCode,
+        qr_url: qrUrl
+      }
+    });
+    if (fnError) throw fnError;
+
+    // affichage confirmation
+    document.getElementById('confirmName').textContent = 'Bienvenue, ' + payload.prenom + ' !';
+    document.getElementById('confirmTicketNum').textContent = ticketCode;
+    document.getElementById('confirmEmail').textContent = payload.email;
+    document.getElementById('confirmQr').src = qrUrl;
+    form.style.display = 'none';
+    document.getElementById('confirmBox').style.display = 'block';
+
+    refreshCount();
+  }catch(err){
+    console.error(err);
+    msgEl.textContent = "Une erreur est survenue. Vérifie tes informations et réessaie.";
+    msgEl.className = 'form-msg error';
+  }finally{
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Confirmer mon inscription 🔥";
+  }
+});
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  form.reset();
+  form.style.display = 'block';
+  document.getElementById('confirmBox').style.display = 'none';
+});
+</script>
+</body>
+</html>
