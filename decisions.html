@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Je veux Jésus — Holy Brunch</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --cream:#121110; --cream-2:#1E1A15; --forest:#C9A227; --forest-2:#F3E9D6;
+    --gold:#C9A227; --terracotta:#A6231F; --ink:#F3E9D6; --line:rgba(201,162,39,0.22);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2{ font-family:'Fraunces',serif; color:var(--forest-2); margin:0; }
+  .mono{ font-family:'Space Mono',monospace; }
+
+  .login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:18px;
+    padding:40px; max-width:380px; width:100%; box-shadow:0 18px 40px -18px rgba(0,0,0,0.6);
+  }
+  .login-card h1{ font-size:1.6rem; margin-bottom:6px; }
+  .login-card p{ color:rgba(243,233,214,0.6); font-size:.9rem; margin-bottom:24px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--forest); margin-bottom:6px; }
+  .field input, .field select, .field textarea{
+    width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px;
+    font-family:'Work Sans',sans-serif; font-size:.95rem; background:#F7EFDD; color:#241E17;
+  }
+  .field textarea{ resize:vertical; min-height:60px; }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--terracotta); }
+  .btn{ width:100%; padding:14px; border:none; border-radius:999px; background:var(--terracotta); color:#FFF7F0; font-weight:600; cursor:pointer; font-family:'Work Sans',sans-serif; }
+  .btn:hover{ background:var(--forest); color:#1B1712; }
+  .err{ color:var(--terracotta); font-size:.85rem; margin-top:10px; text-align:center; min-height:1.2em; }
+  .ok-msg{ color:#3F8F5C; font-size:.85rem; margin-top:10px; text-align:center; min-height:1.2em; }
+
+  .app-wrap{ display:none; max-width:640px; margin:0 auto; padding:24px 16px 60px; }
+  .top-bar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .logout{ font-size:.8rem; color:var(--terracotta); background:none; border:none; cursor:pointer; text-decoration:underline; font-family:'Work Sans',sans-serif; }
+
+  .card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:18px;
+    padding:28px; margin-bottom:24px; box-shadow:0 18px 40px -18px rgba(0,0,0,0.6);
+  }
+  .card h2{ font-size:1.3rem; margin-bottom:18px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:520px){ .row2{ grid-template-columns:1fr; } }
+
+  .list-item{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; margin-bottom:10px;
+  }
+  .list-item .li-top{ display:flex; justify-content:space-between; align-items:baseline; }
+  .list-item .li-name{ font-family:'Fraunces',serif; font-size:1.1rem; color:var(--forest-2); }
+  .list-item .li-date{ font-family:'Space Mono',monospace; font-size:.7rem; color:rgba(243,233,214,0.5); }
+  .list-item .li-type{
+    display:inline-block; margin-top:6px; font-family:'Space Mono',monospace; font-size:.7rem;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--terracotta);
+    background:rgba(166,35,31,0.12); padding:3px 10px; border-radius:999px;
+  }
+  .list-item .li-meta{ margin-top:8px; font-size:.85rem; color:rgba(243,233,214,0.65); }
+  .list-item .li-wa{ margin-top:8px; display:inline-block; font-size:.8rem; color:var(--forest); text-decoration:none; }
+
+  .section-title{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .section-title h2{ font-size:1.1rem; }
+  .count-pill{ font-family:'Space Mono',monospace; font-size:.75rem; color:var(--forest); }
+  .export-btn{ font-size:.8rem; color:var(--forest); background:none; border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; font-family:'Work Sans',sans-serif; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>Je veux Jésus</h1>
+    <p>Connecte-toi avec ton compte admin pour enregistrer une personne.</p>
+    <form id="loginForm">
+      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" required></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="loginPassword" required></div>
+      <button class="btn" type="submit">Se connecter</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+
+<div class="app-wrap" id="appWrap">
+  <div class="top-bar">
+    <h1 style="font-size:1.3rem;">Je veux Jésus</h1>
+    <button class="logout" id="logoutBtn">Déconnexion</button>
+  </div>
+
+  <div class="card">
+    <h2>Je veux Jésus</h2>
+    <form id="decisionForm">
+      <div class="row2">
+        <div class="field"><label>Prénom</label><input type="text" id="prenom" required></div>
+        <div class="field"><label>Nom</label><input type="text" id="nom" required></div>
+      </div>
+      <div class="row2" style="margin-top:14px;">
+        <div class="field"><label>Téléphone / WhatsApp <span style="text-transform:none; color:rgba(243,233,214,0.4);">(pour le suivi)</span></label><input type="tel" id="telephone"></div>
+        <div class="field"><label>Ville / quartier</label><input type="text" id="ville"></div>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label>Type de décision</label>
+        <select id="typeDecision" required>
+          <option value="">— Choisir —</option>
+          <option value="Nouvelle naissance">Je veux Jésus</option>
+          <option value="Renouvellement">Je renouvelle mon engagement</option>
+          <option value="Plus d'informations">Je veux en savoir plus</option>
+        </select>
+      </div>
+      <div class="row2" style="margin-top:14px;">
+        <div class="field"><label>Accompagnateur / conseiller</label><input type="text" id="accompagnateur" placeholder="Ton nom"></div>
+        <div class="field"><label>Notes <span style="text-transform:none; color:rgba(243,233,214,0.4);">(facultatif)</span></label><input type="text" id="notes"></div>
+      </div>
+      <button type="submit" class="btn" style="margin-top:18px;" id="submitBtn">Enregistrer 🙏</button>
+      <div class="err" id="formErr"></div>
+      <div class="ok-msg" id="formOk"></div>
+    </form>
+  </div>
+
+  <div class="section-title">
+    <h2>Décisions enregistrées</h2>
+    <span class="count-pill mono" id="totalCount">–</span>
+  </div>
+  <button class="export-btn" id="exportBtn" style="margin-bottom:14px;">Exporter en CSV</button>
+  <div id="listWrap"></div>
+</div>
+
+<footer>Que Sa Majesté Le Saint-Esprit nous revèle Jésus.</footer>
+
+<script>
+const CONFIG = {
+  SUPABASE_URL: "https://kmnavmsbdahwqftjhvzj.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8"
+};
+const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+let allDecisions = [];
+
+async function checkSession(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session){ showApp(); loadDecisions(); }
+}
+checkSession();
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){ errEl.textContent = "Identifiants incorrects."; return; }
+  showApp();
+  loadDecisions();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  location.reload();
+});
+
+function showApp(){
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'block';
+}
+
+document.getElementById('decisionForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('formErr');
+  const okEl = document.getElementById('formOk');
+  errEl.textContent = ''; okEl.textContent = '';
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+
+  const payload = {
+    prenom: document.getElementById('prenom').value.trim(),
+    nom: document.getElementById('nom').value.trim(),
+    telephone: document.getElementById('telephone').value.trim() || null,
+    ville: document.getElementById('ville').value.trim() || null,
+    type_decision: document.getElementById('typeDecision').value,
+    accompagnateur: document.getElementById('accompagnateur').value.trim() || null,
+    notes: document.getElementById('notes').value.trim() || null
+  };
+
+  const { error } = await supabaseClient.from('decisions').insert(payload);
+  submitBtn.disabled = false;
+
+  if(error){
+    errEl.textContent = "Erreur, réessaie.";
+    console.error(error);
+    return;
+  }
+
+  okEl.textContent = "Enregistré ✔";
+  document.getElementById('decisionForm').reset();
+  loadDecisions();
+  setTimeout(() => { okEl.textContent = ''; }, 2500);
+});
+
+async function loadDecisions(){
+  const { data, error } = await supabaseClient
+    .from('decisions')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if(error){ console.error(error); return; }
+  allDecisions = data;
+  document.getElementById('totalCount').textContent = data.length + ' décisions';
+  renderList(data);
+}
+
+function renderList(rows){
+  const wrap = document.getElementById('listWrap');
+  if(rows.length === 0){
+    wrap.innerHTML = '<p style="color:rgba(243,233,214,0.5); font-size:.9rem;">Aucune décision enregistrée pour le moment.</p>';
+    return;
+  }
+  wrap.innerHTML = rows.map(r => `
+    <div class="list-item">
+      <div class="li-top">
+        <span class="li-name">${escapeHtml(r.prenom)} ${escapeHtml(r.nom)}</span>
+        <span class="li-date mono">${new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+      </div>
+      <span class="li-type">${escapeHtml(r.type_decision)}</span>
+      <div class="li-meta">
+        ${r.ville ? escapeHtml(r.ville) + ' — ' : ''}${r.accompagnateur ? 'avec ' + escapeHtml(r.accompagnateur) : ''}
+        ${r.notes ? '<br>' + escapeHtml(r.notes) : ''}
+      </div>
+      ${r.telephone ? `<a class="li-wa" href="https://wa.me/${r.telephone.replace(/\D/g,'')}" target="_blank">💬 ${escapeHtml(r.telephone)}</a>` : ''}
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const headers = ['Prenom','Nom','Telephone','Ville','Type','Accompagnateur','Notes','Date'];
+  const lines = [headers.join(',')];
+  allDecisions.forEach(r => {
+    lines.push([
+      r.prenom, r.nom, r.telephone || '', r.ville || '', r.type_decision,
+      r.accompagnateur || '', r.notes || '', new Date(r.created_at).toLocaleDateString('fr-FR')
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'decisions-holy-brunch.csv';
+  a.click();
+});
+</script>
+</body>
+</html>
