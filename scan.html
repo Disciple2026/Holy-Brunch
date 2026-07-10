@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan — Holy Brunch</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --cream:#121110; --cream-2:#1E1A15; --forest:#C9A227; --forest-2:#F3E9D6;
+    --gold:#C9A227; --terracotta:#A6231F; --ink:#F3E9D6; --line:rgba(201,162,39,0.22);
+    --green:#3F8F5C;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2{ font-family:'Fraunces',serif; color:var(--forest-2); margin:0; }
+  .mono{ font-family:'Space Mono',monospace; }
+
+  .login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:18px;
+    padding:40px; max-width:380px; width:100%; box-shadow:0 18px 40px -18px rgba(0,0,0,0.6);
+  }
+  .login-card h1{ font-size:1.6rem; margin-bottom:6px; }
+  .login-card p{ color:rgba(243,233,214,0.6); font-size:.9rem; margin-bottom:24px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--forest); margin-bottom:6px; }
+  .field input{ width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px; font-family:'Work Sans',sans-serif; font-size:.95rem; background:#F7EFDD; color:#241E17; }
+  .field input:focus{ outline:none; border-color:var(--terracotta); }
+  .btn{ width:100%; padding:14px; border:none; border-radius:999px; background:var(--terracotta); color:#FFF7F0; font-weight:600; cursor:pointer; font-family:'Work Sans',sans-serif; }
+  .btn:hover{ background:var(--forest); color:#1B1712; }
+  .err{ color:var(--terracotta); font-size:.85rem; margin-top:10px; text-align:center; min-height:1.2em; }
+
+  .scan-wrap{ display:none; max-width:480px; margin:0 auto; padding:20px 16px 60px; }
+  .top-bar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .stat-pill{
+    font-family:'Space Mono',monospace; font-size:.8rem; background:var(--cream-2);
+    border:1px solid var(--line); padding:8px 14px; border-radius:999px; color:var(--forest);
+  }
+  .logout{ font-size:.8rem; color:var(--terracotta); background:none; border:none; cursor:pointer; text-decoration:underline; font-family:'Work Sans',sans-serif; }
+
+  #reader{ border-radius:16px; overflow:hidden; border:1px solid var(--line); }
+
+  .result{
+    margin-top:18px; border-radius:16px; padding:22px; text-align:center;
+    background:var(--cream-2); border:1.5px solid var(--line); min-height:96px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:background .2s ease, border-color .2s ease;
+  }
+  .result.ok{ background:rgba(63,143,92,0.14); border-color:var(--green); }
+  .result.warn{ background:rgba(201,162,39,0.14); border-color:var(--gold); }
+  .result.err{ background:rgba(166,35,31,0.14); border-color:var(--terracotta); }
+  .result .status{ font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; opacity:.75; }
+  .result .name{ font-family:'Fraunces',serif; font-size:1.4rem; margin-top:6px; color:var(--forest-2); }
+  .result .meta{ font-size:.85rem; margin-top:4px; color:rgba(243,233,214,0.7); }
+  .result .ticket{ font-family:'Space Mono',monospace; margin-top:8px; color:var(--gold); }
+
+  .manual{ margin-top:18px; }
+  .manual label{ display:block; font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--forest); margin-bottom:6px; }
+  .manual-row{ display:flex; gap:8px; }
+  .manual-row input{ flex:1; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px; background:#F7EFDD; color:#241E17; font-family:'Space Mono',monospace; }
+  .manual-row button{ padding:0 20px; border:none; border-radius:10px; background:var(--forest); color:#1B1712; font-weight:600; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>Scan entrée</h1>
+    <p>Connecte-toi avec ton compte admin pour scanner les tickets.</p>
+    <form id="loginForm">
+      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" required></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="loginPassword" required></div>
+      <button class="btn" type="submit">Se connecter</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+
+<div class="scan-wrap" id="scanWrap">
+  <div class="top-bar">
+    <span class="stat-pill mono" id="presentCount">– présents</span>
+    <button class="logout" id="logoutBtn">Déconnexion</button>
+  </div>
+
+  <div id="reader"></div>
+
+  <div class="result" id="result">
+    <div class="status">Prêt</div>
+    <div class="name">Scanne un ticket</div>
+  </div>
+
+  <div class="manual">
+    <label>Ou entre le numéro manuellement</label>
+    <div class="manual-row">
+      <input type="text" id="manualInput" placeholder="HB-014 ou 014">
+      <button id="manualBtn">Valider</button>
+    </div>
+  </div>
+</div>
+
+<footer>Que Sa Majesté Le Saint-Esprit nous revèle Jésus.</footer>
+
+<script>
+const CONFIG = {
+  SUPABASE_URL: "https://kmnavmsbdahwqftjhvzj.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8"
+};
+const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+let html5QrCode = null;
+let busy = false;
+
+async function checkSession(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session){ showScan(); }
+}
+checkSession();
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){ errEl.textContent = "Identifiants incorrects."; return; }
+  showScan();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if(html5QrCode){ try{ await html5QrCode.stop(); }catch(e){} }
+  await supabaseClient.auth.signOut();
+  location.reload();
+});
+
+function showScan(){
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('scanWrap').style.display = 'block';
+  refreshPresentCount();
+  startScanner();
+}
+
+async function refreshPresentCount(){
+  const { count } = await supabaseClient
+    .from('inscriptions')
+    .select('*', { count: 'exact', head: true })
+    .eq('checked_in', true);
+  document.getElementById('presentCount').textContent = (count ?? 0) + ' présents';
+}
+
+function startScanner(){
+  html5QrCode = new Html5Qrcode("reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 240, height: 240 } },
+    onScanSuccess,
+    () => {}
+  ).catch(err => {
+    showResult('err', 'Caméra indisponible', String(err));
+  });
+}
+
+function extractTicketNumber(text){
+  const match = text.match(/HB-?(\d+)/i);
+  if(match) return parseInt(match[1], 10);
+  const n = parseInt(text.replace(/\D/g, ''), 10);
+  return isNaN(n) ? null : n;
+}
+
+async function onScanSuccess(decodedText){
+  if(busy) return;
+  busy = true;
+  await processTicket(extractTicketNumber(decodedText));
+  setTimeout(() => { busy = false; }, 1500);
+}
+
+document.getElementById('manualBtn').addEventListener('click', async () => {
+  const val = document.getElementById('manualInput').value;
+  const num = extractTicketNumber(val);
+  document.getElementById('manualInput').value = '';
+  await processTicket(num);
+});
+
+async function processTicket(ticketNumber){
+  if(!ticketNumber){
+    showResult('err', 'Illisible', 'Numéro de ticket introuvable dans le code scanné.');
+    return;
+  }
+
+  const { data: row, error } = await supabaseClient
+    .from('inscriptions')
+    .select('*')
+    .eq('ticket_number', ticketNumber)
+    .single();
+
+  if(error || !row){
+    showResult('err', 'HB-' + String(ticketNumber).padStart(3,'0'), "Ticket introuvable — pas dans la liste.");
+    return;
+  }
+
+  if(row.checked_in){
+    showResult('warn', row.prenom + ' ' + row.nom, 'Déjà entré(e) — ticket déjà scanné.', ticketNumber, row);
+    return;
+  }
+
+  await supabaseClient.from('inscriptions').update({ checked_in: true }).eq('id', row.id);
+  showResult('ok', row.prenom + ' ' + row.nom, row.communaute + ' — ' + row.ville, ticketNumber, row);
+  refreshPresentCount();
+}
+
+function showResult(type, name, meta, ticketNumber, row){
+  const el = document.getElementById('result');
+  el.className = 'result ' + type;
+  const statusText = type === 'ok' ? '✔ Entrée validée' : type === 'warn' ? '⚠ Attention' : '✕ Erreur';
+  el.innerHTML = `
+    <div class="status">${statusText}</div>
+    <div class="name">${name}</div>
+    <div class="meta">${meta}</div>
+    ${ticketNumber ? `<div class="ticket mono">HB-${String(ticketNumber).padStart(3,'0')}</div>` : ''}
+  `;
+}
+</script>
+</body>
+</html>
