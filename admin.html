@@ -111,12 +111,12 @@ const CONFIG = {
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8",
   MAX_PLACES: 200
 };
-const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 let allRows = [];
 
 async function checkSession(){
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if(session){ showDash(); loadData(); }
 }
 checkSession();
@@ -127,7 +127,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const password = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginErr');
   errEl.textContent = '';
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if(error){
     errEl.textContent = "Identifiants incorrects.";
     return;
@@ -137,7 +137,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   location.reload();
 });
 
@@ -147,7 +147,7 @@ function showDash(){
 }
 
 async function loadData(){
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('inscriptions')
     .select('*')
     .order('ticket_number', { ascending: true });
@@ -189,7 +189,7 @@ function renderTable(rows){
     btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
       const newState = btn.dataset.state !== 'true';
-      const { error } = await supabase.from('inscriptions').update({ checked_in: newState }).eq('id', id);
+      const { error } = await supabaseClient.from('inscriptions').update({ checked_in: newState }).eq('id', id);
       if(!error) loadData();
     });
   });
