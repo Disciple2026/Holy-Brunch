@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Holy Brunch</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --cream:#121110; --cream-2:#1E1A15; --forest:#C9A227; --forest-2:#F3E9D6;
+    --gold:#C9A227; --terracotta:#A6231F; --ink:#F3E9D6; --line:rgba(201,162,39,0.22);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Work Sans',sans-serif; }
+  h1,h2{ font-family:'Fraunces',serif; color:var(--forest-2); margin:0; }
+  .mono{ font-family:'Space Mono',monospace; }
+
+  .login-wrap{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .login-card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:18px;
+    padding:40px; max-width:380px; width:100%; box-shadow:0 18px 40px -18px rgba(0,0,0,0.6);
+  }
+  .login-card h1{ font-size:1.6rem; margin-bottom:6px; }
+  .login-card p{ color:rgba(243,233,214,0.6); font-size:.9rem; margin-bottom:24px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--forest); margin-bottom:6px; }
+  .field input{ width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px; font-family:'Work Sans',sans-serif; font-size:.95rem; background:#F7EFDD; color:#241E17; }
+  .field input:focus{ outline:none; border-color:var(--terracotta); }
+  .btn{ width:100%; padding:14px; border:none; border-radius:999px; background:var(--terracotta); color:#FFF7F0; font-weight:600; cursor:pointer; font-family:'Work Sans',sans-serif; }
+  .btn:hover{ background:var(--forest); color:#1B1712; }
+  .err{ color:#D9614A; font-size:.85rem; margin-top:10px; text-align:center; min-height:1.2em; }
+
+  .dash{ display:none; padding:32px 24px 60px; max-width:1160px; margin:0 auto; }
+  .dash-head{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px; }
+  .stats{ display:flex; gap:18px; flex-wrap:wrap; margin-bottom:26px; }
+  .stat{ background:var(--cream-2); border:1px solid var(--line); color:var(--ink); border-radius:14px; padding:18px 24px; min-width:140px; }
+  .stat .n{ font-family:'Space Mono',monospace; font-size:1.8rem; color:var(--gold); font-weight:700; }
+  .stat .l{ font-size:.75rem; color:rgba(243,233,214,0.6); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
+
+  .toolbar{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+  .toolbar input{ padding:10px 14px; border:1.5px solid var(--line); border-radius:10px; font-family:'Work Sans',sans-serif; flex:1; min-width:200px; background:#F7EFDD; color:#241E17; }
+  .toolbar button{ padding:10px 18px; border-radius:10px; border:1.5px solid var(--forest); background:transparent; color:var(--forest); font-weight:600; cursor:pointer; font-family:'Work Sans',sans-serif; }
+  .toolbar button:hover{ background:var(--forest); color:#1B1712; }
+  .toolbar .logout{ border-color:var(--terracotta); color:#D9614A; margin-left:auto; }
+  .toolbar .logout:hover{ background:var(--terracotta); color:#FFF7F0; }
+
+  table{ width:100%; border-collapse:collapse; background:var(--cream-2); border-radius:14px; overflow:hidden; box-shadow:0 10px 26px -16px rgba(0,0,0,0.5); }
+  thead{ background:#1B1712; color:var(--forest-2); }
+  th, td{ padding:12px 14px; text-align:left; font-size:.85rem; border-bottom:1px solid var(--line); color:var(--ink); }
+  th{ font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); }
+  tbody tr:hover{ background:rgba(201,162,39,0.06); }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:.72rem; font-family:'Space Mono',monospace; }
+  .badge.yes{ background:rgba(201,162,39,0.14); color:var(--gold); }
+  .badge.no{ background:rgba(166,35,31,0.14); color:#D9614A; }
+  .checkin-btn{ border:none; background:none; cursor:pointer; font-size:.78rem; text-decoration:underline; color:var(--gold); font-family:'Work Sans',sans-serif; }
+  .table-wrap{ overflow-x:auto; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>Espace admin</h1>
+    <p>Connecte-toi pour gérer la liste des inscriptions.</p>
+    <form id="loginForm">
+      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" required></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="loginPassword" required></div>
+      <button class="btn" type="submit">Se connecter</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+
+<div class="dash" id="dash">
+  <div class="dash-head">
+    <h1>Liste des inscrits</h1>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="statTotal">–</div><div class="l">Inscrits</div></div>
+    <div class="stat"><div class="n" id="statLeft">–</div><div class="l">Places restantes</div></div>
+    <div class="stat"><div class="n" id="statCheckedIn">–</div><div class="l">Présents (check-in)</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Rechercher un nom, ville, communauté...">
+    <button id="exportBtn">Exporter en CSV</button>
+    <button id="refreshBtn">Rafraîchir</button>
+    <button class="logout" id="logoutBtn">Déconnexion</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Ticket</th><th>Prénom</th><th>Nom</th><th>Communauté</th><th>Ville</th>
+          <th>WhatsApp</th><th>E-mail</th><th>Découverte</th><th>Inscrit le</th><th>Présence</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  SUPABASE_URL: "https://kmnavmsbdahwqftjhvzj.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8",
+  MAX_PLACES: 200
+};
+const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+let allRows = [];
+
+async function checkSession(){
+  const { data: { session } } = await supabase.auth.getSession();
+  if(session){ showDash(); loadData(); }
+}
+checkSession();
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if(error){
+    errEl.textContent = "Identifiants incorrects.";
+    return;
+  }
+  showDash();
+  loadData();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await supabase.auth.signOut();
+  location.reload();
+});
+
+function showDash(){
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+}
+
+async function loadData(){
+  const { data, error } = await supabase
+    .from('inscriptions')
+    .select('*')
+    .order('ticket_number', { ascending: true });
+  if(error){ console.error(error); return; }
+  allRows = data;
+  renderStats();
+  renderTable(allRows);
+}
+
+function renderStats(){
+  document.getElementById('statTotal').textContent = allRows.length;
+  document.getElementById('statLeft').textContent = Math.max(0, CONFIG.MAX_PLACES - allRows.length);
+  document.getElementById('statCheckedIn').textContent = allRows.filter(r => r.checked_in).length;
+}
+
+function renderTable(rows){
+  const body = document.getElementById('tableBody');
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">HB-${String(r.ticket_number).padStart(3,'0')}</td>
+      <td>${escapeHtml(r.prenom)}</td>
+      <td>${escapeHtml(r.nom)}</td>
+      <td>${escapeHtml(r.communaute)}</td>
+      <td>${escapeHtml(r.ville)}</td>
+      <td>${escapeHtml(r.whatsapp)}</td>
+      <td>${escapeHtml(r.email)}</td>
+      <td>${escapeHtml(r.decouverte || '—')}</td>
+      <td class="mono">${new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
+      <td>
+        <span class="badge ${r.checked_in ? 'yes' : 'no'}">${r.checked_in ? 'Présent' : 'Absent'}</span>
+        <button class="checkin-btn" data-id="${r.id}" data-state="${r.checked_in}">
+          ${r.checked_in ? 'annuler' : 'marquer présent'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  body.querySelectorAll('.checkin-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const newState = btn.dataset.state !== 'true';
+      const { error } = await supabase.from('inscriptions').update({ checked_in: newState }).eq('id', id);
+      if(!error) loadData();
+    });
+  });
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  const filtered = allRows.filter(r =>
+    (r.prenom + r.nom + r.communaute + r.ville + r.email).toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+});
+
+document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const headers = ['Ticket','Prenom','Nom','Communaute','Ville','WhatsApp','Email','Decouverte','Inscrit le','Present'];
+  const lines = [headers.join(',')];
+  allRows.forEach(r => {
+    lines.push([
+      'HB-' + String(r.ticket_number).padStart(3,'0'),
+      r.prenom, r.nom, r.communaute, r.ville, r.whatsapp, r.email,
+      (r.decouverte || ''), new Date(r.created_at).toLocaleDateString('fr-FR'),
+      r.checked_in ? 'Oui' : 'Non'
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'inscriptions-holy-brunch.csv';
+  a.click();
+});
+</script>
+</body>
+</html>
