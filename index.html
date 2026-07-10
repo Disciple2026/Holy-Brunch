@@ -317,14 +317,14 @@
 <div class="grain"></div>
 
 <nav class="nav">
-  <div class="brand">Refuge pour la Restauration <span class="dot">×</span> Christ's Lovers</div>
+  <div class="brand">Refuge pour la Restauration<span class="dot">×</span> Christ's Lovers</div>
   <a href="#inscription" class="cta-mini">Je m'inscris</a>
 </nav>
 
 <section class="hero">
   <div class="wrap">
     <span class="eyebrow">Refuge pour la Restauration</span>
-    <h1>Une famille, une foi,un feu.<br><em>Holy Brunch</em></h1>
+    <h1>Une famille, une foi, un feu.<br><em>Holy Brunch</em></h1>
     <p class="sub">Refuge pour la Restauration et Christ's Lovers fusionnent leur activité pour vous offrir un pique-nique gratuit, ouvert à tous, pour partager, grandir et créer des liens fraternels — Ne ratez surtout pas.</p>
     <div class="hero-ctas">
       <a href="#inscription" class="btn btn-primary">Réserver ma place →</a>
@@ -344,7 +344,7 @@
     <div class="status-head">
       <span class="eyebrow">En direct</span>
       <h2>Oh ! qu’il est bon et qu’il est agréable pour des frères d’habiter unis ensemble ! </h2>
-      <p>C’est comme de l’excellente huile répandue sur la tête, qui coule le long de la barbe, la barbe d’Aaron, et qui descend sur le col de ses vêtements.C’est comme la rosée de l’Hermon qui descend sur les montagnes de Sion. C’est là que Jéhovah a décrété que soit sa bénédiction, la vie éternelle.</p>
+      <p>C’est comme de l’excellente huile répandue sur la tête, qui coule le long de la barbe, la barbe d’Aaron, et qui descend sur le col de ses vêtements.C’est comme la rosée de l’Hermon qui descend sur les montagnes de Sion. C’est là que Jéhovah a décrété que soit sa bénédiction, la vie éternelle. Psaumes 133</p>
     </div>
     <div class="status-grid">
       <div class="gauge-card">
@@ -382,7 +382,7 @@
           <div class="cblock"><div class="num mono" id="cdMin">--</div><div class="lbl">min</div></div>
           <div class="cblock"><div class="num mono" id="cdSec">--</div><div class="lbl">sec</div></div>
         </div>
-        <div class="countdown-date">Jusqu'au 20 juillet, 10H59.</div>
+        <div class="countdown-date">Jusqu'au 21 juillet, 23h59.</div>
       </div>
     </div>
   </div>
@@ -418,7 +418,7 @@
         </div>
         <div class="field">
           <label for="ville">Ville</label>
-          <input type="text" id="ville" required placeholder="Ex : Bobo">
+          <input type="text" id="ville" required placeholder="Ex : BOBO">
         </div>
       </div>
       <div class="row2">
@@ -451,7 +451,7 @@
         <div class="confirm-bottom">
           <p>Ton ticket vient d'être envoyé à <strong id="confirmEmail"></strong>. Présente-le (ou ce QR code) le jour J.</p>
           <div class="qr-wrap"><img id="confirmQr" alt="QR code du ticket"></div>
-          <p>Une famille, une foi, un feu — à très vite ✨</p>
+          <p>Holy Brunch — à très vite ✨</p>
           <button class="confirm-back" id="backBtn">← Inscrire quelqu'un d'autre</button>
         </div>
       </div>
@@ -459,7 +459,7 @@
   </div>
 </section>
 
-<footer>HOLY BRUNCH — INSCRIPTIONS JUSQU'AU 21 JUILLET A 10H59.</footer>
+<footer>HOLY BRUNCH — INSCRIPTIONS JUSQU'AU 21 JUILLET A 10H59</footer>
 
 <script>
 /* ============ CONFIGURATION — à compléter par Jaurès ============ */
@@ -467,17 +467,17 @@ const CONFIG = {
   SUPABASE_URL: "https://kmnavmsbdahwqftjhvzj.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8",
   MAX_PLACES: 200,
-  EVENT_DEADLINE: "2026-07-21T10:59:59"
+  EVENT_DEADLINE: "2026-07-21T23:59:59"
 };
 /* ================================================================= */
 
-const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 let currentCount = 0;
 
 async function refreshCount(){
   try{
-    const { data, error } = await supabase.rpc('get_registration_count');
+    const { data, error } = await supabaseClient.rpc('get_registration_count');
     if(error) throw error;
     currentCount = data ?? 0;
     updateGauge(currentCount);
@@ -568,7 +568,7 @@ form.addEventListener('submit', async (e) => {
       return;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('inscriptions')
       .insert(payload)
       .select('ticket_number')
@@ -582,7 +582,7 @@ form.addEventListener('submit', async (e) => {
     const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=' + qrData;
 
     // envoi automatique du ticket par mail via la fonction serveur (Resend)
-    const { error: fnError } = await supabase.functions.invoke('send-ticket', {
+    const { error: fnError } = await supabaseClient.functions.invoke('send-ticket', {
       body: {
         to_email: payload.email,
         to_name: payload.prenom + ' ' + payload.nom,
