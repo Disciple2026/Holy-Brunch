@@ -42,8 +42,10 @@
 
   .toolbar{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
   .toolbar input{ padding:10px 14px; border:1.5px solid var(--line); border-radius:10px; font-family:'Work Sans',sans-serif; flex:1; min-width:200px; background:#F7EFDD; color:#241E17; }
+  .toolbar select{ padding:10px 14px; border:1.5px solid var(--line); border-radius:10px; font-family:'Work Sans',sans-serif; background:#F7EFDD; color:#241E17; }
   .toolbar button{ padding:10px 18px; border-radius:10px; border:1.5px solid var(--forest); background:transparent; color:var(--forest); font-weight:600; cursor:pointer; font-family:'Work Sans',sans-serif; }
   .toolbar button:hover{ background:var(--forest); color:#1B1712; }
+  .toolbar button.active{ background:var(--forest); color:#1B1712; }
   .toolbar .logout{ border-color:var(--terracotta); color:#D9614A; margin-left:auto; }
   .toolbar .logout:hover{ background:var(--terracotta); color:#FFF7F0; }
 
@@ -52,11 +54,46 @@
   th, td{ padding:12px 14px; text-align:left; font-size:.85rem; border-bottom:1px solid var(--line); color:var(--ink); }
   th{ font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); }
   tbody tr:hover{ background:rgba(201,162,39,0.06); }
+  tbody tr.dup{ background:rgba(166,35,31,0.08); }
   .badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:.72rem; font-family:'Space Mono',monospace; }
   .badge.yes{ background:rgba(201,162,39,0.14); color:var(--gold); }
   .badge.no{ background:rgba(166,35,31,0.14); color:#D9614A; }
+  .badge.dup{ background:rgba(166,35,31,0.18); color:#D9614A; margin-left:6px; }
   .checkin-btn{ border:none; background:none; cursor:pointer; font-size:.78rem; text-decoration:underline; color:var(--gold); font-family:'Work Sans',sans-serif; }
+  .delete-btn{ border:none; background:none; cursor:pointer; font-size:.78rem; text-decoration:underline; color:#D9614A; font-family:'Work Sans',sans-serif; margin-left:10px; }
   .table-wrap{ overflow-x:auto; }
+
+  .breakdown{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:26px; }
+  @media (max-width:700px){ .breakdown{ grid-template-columns:1fr; } }
+  .bd-card{ background:var(--cream-2); border:1px solid var(--line); border-radius:14px; padding:20px 22px; }
+  .bd-card h3{ font-family:'Space Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--forest); margin:0 0 14px; font-weight:400; }
+  .bd-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:.82rem; }
+  .bd-label{ width:110px; flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink); }
+  .bd-bar-wrap{ flex:1; background:rgba(243,233,214,0.08); border-radius:999px; height:10px; overflow:hidden; }
+  .bd-bar{ height:100%; background:linear-gradient(90deg, var(--terracotta), var(--gold)); border-radius:999px; }
+  .bd-count{ width:26px; flex:none; text-align:right; font-family:'Space Mono',monospace; color:var(--gold); }
+
+  #printSheet{ display:none; }
+  @media print{
+    body *{ visibility:hidden; }
+    #printSheet, #printSheet *{ visibility:visible; }
+    #printSheet{ display:block; position:absolute; top:0; left:0; width:100%; padding:20px; color:#000; background:#fff; }
+    #printSheet h1{ color:#000; font-size:1.3rem; margin-bottom:4px; }
+    #printSheet .print-sub{ font-size:.8rem; color:#444; margin-bottom:16px; }
+    #printSheet table{ width:100%; border-collapse:collapse; box-shadow:none; }
+    #printSheet th, #printSheet td{ border:1px solid #999; padding:8px 10px; text-align:left; font-size:.8rem; color:#000; }
+    #printSheet thead{ background:#eee; }
+  }
+
+  .pages-nav{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .pages-nav a{
+    font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+    text-decoration:none; color:var(--forest); background:var(--cream-2);
+    border:1px solid var(--line); padding:8px 14px; border-radius:999px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .pages-nav a:hover{ background:var(--forest); color:#1B1712; }
+  .pages-nav a.current{ background:var(--forest); color:#1B1712; }
 </style>
 </head>
 <body>
@@ -75,6 +112,7 @@
 </div>
 
 <div class="dash" id="dash">
+  <div class="pages-nav"><a href="admin.html" class="current">Inscrits</a><a href="scan.html">Scan</a><a href="decisions.html">Décisions</a><a href="equipe.html">Équipe</a></div>
   <div class="dash-head">
     <h1>Liste des inscrits</h1>
   </div>
@@ -83,10 +121,24 @@
     <div class="stat"><div class="n" id="statTotal">–</div><div class="l">Inscrits</div></div>
     <div class="stat"><div class="n" id="statLeft">–</div><div class="l">Places restantes</div></div>
     <div class="stat"><div class="n" id="statCheckedIn">–</div><div class="l">Présents (check-in)</div></div>
+    <div class="stat"><div class="n" id="statDup">–</div><div class="l">Doublons potentiels</div></div>
+  </div>
+
+  <div class="breakdown">
+    <div class="bd-card"><h3>Répartition par ville</h3><div id="bdVille"></div></div>
+    <div class="bd-card"><h3>Répartition par communauté</h3><div id="bdCommunaute"></div></div>
   </div>
 
   <div class="toolbar">
     <input type="text" id="search" placeholder="Rechercher un nom, ville, communauté...">
+    <select id="sortSelect">
+      <option value="ticket">Trier : Ticket</option>
+      <option value="nom">Trier : Nom (A-Z)</option>
+      <option value="prenom">Trier : Prénom (A-Z)</option>
+      <option value="date">Trier : Date d'inscription</option>
+    </select>
+    <button id="dupBtn">Voir les doublons</button>
+    <button id="printBtn">Imprimer la feuille d'émargement</button>
     <button id="exportBtn">Exporter en CSV</button>
     <button id="refreshBtn">Rafraîchir</button>
     <button class="logout" id="logoutBtn">Déconnexion</button>
@@ -105,6 +157,17 @@
   </div>
 </div>
 
+<div id="printSheet">
+  <h1>Holy Brunch — Feuille d'émargement</h1>
+  <div class="print-sub" id="printSub"></div>
+  <table>
+    <thead><tr><th>N°</th><th>Nom complet</th><th>Ville</th><th>Communauté</th><th>Signature</th></tr></thead>
+    <tbody id="printBody"></tbody>
+  </table>
+</div>
+
+<footer>HOLY BRUNCH — Page d'admin.</footer>
+
 <script>
 const CONFIG = {
   SUPABASE_URL: "https://kmnavmsbdahwqftjhvzj.supabase.co",
@@ -114,6 +177,8 @@ const CONFIG = {
 const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 let allRows = [];
+let sortMode = 'ticket';
+let dupOnly = false;
 
 async function checkSession(){
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -157,19 +222,87 @@ async function loadData(){
   renderTable(allRows);
 }
 
+function normalize(str){
+  return String(str || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function getDuplicateIds(rows){
+  const byName = {}, byWhatsapp = {}, byEmail = {};
+  rows.forEach(r => {
+    const nameKey = normalize(r.prenom) + '|' + normalize(r.nom);
+    const waKey = normalize(r.whatsapp).replace(/\D/g, '');
+    const emailKey = normalize(r.email);
+    (byName[nameKey] ||= []).push(r.id);
+    if(waKey) (byWhatsapp[waKey] ||= []).push(r.id);
+    if(emailKey) (byEmail[emailKey] ||= []).push(r.id);
+  });
+  const dupIds = new Set();
+  [byName, byWhatsapp, byEmail].forEach(group => {
+    Object.values(group).forEach(ids => { if(ids.length > 1) ids.forEach(id => dupIds.add(id)); });
+  });
+  return dupIds;
+}
+
 function renderStats(){
   document.getElementById('statTotal').textContent = allRows.length;
   document.getElementById('statLeft').textContent = Math.max(0, CONFIG.MAX_PLACES - allRows.length);
   document.getElementById('statCheckedIn').textContent = allRows.filter(r => r.checked_in).length;
+  document.getElementById('statDup').textContent = getDuplicateIds(allRows).size;
+  renderBreakdown('bdVille', groupCount(allRows, 'ville'));
+  renderBreakdown('bdCommunaute', groupCount(allRows, 'communaute'));
+}
+
+function groupCount(rows, field){
+  const counts = {};
+  rows.forEach(r => {
+    const key = (r[field] || '—').trim();
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  return Object.entries(counts).sort((a,b) => b[1]-a[1]);
+}
+
+function renderBreakdown(elId, entries){
+  const el = document.getElementById(elId);
+  if(entries.length === 0){ el.innerHTML = '<p style="font-size:.8rem; color:rgba(243,233,214,0.4);">Aucune donnée.</p>'; return; }
+  const max = entries[0][1];
+  el.innerHTML = entries.slice(0, 8).map(([label, count]) => `
+    <div class="bd-row">
+      <span class="bd-label" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+      <span class="bd-bar-wrap"><span class="bd-bar" style="width:${(count/max*100).toFixed(0)}%"></span></span>
+      <span class="bd-count">${count}</span>
+    </div>
+  `).join('');
+}
+
+function sortRows(rows){
+  const sorted = [...rows];
+  if(sortMode === 'nom'){
+    sorted.sort((a,b) => normalize(a.nom).localeCompare(normalize(b.nom)) || normalize(a.prenom).localeCompare(normalize(b.prenom)));
+  } else if(sortMode === 'prenom'){
+    sorted.sort((a,b) => normalize(a.prenom).localeCompare(normalize(b.prenom)) || normalize(a.nom).localeCompare(normalize(b.nom)));
+  } else if(sortMode === 'date'){
+    sorted.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+  } else {
+    sorted.sort((a,b) => a.ticket_number - b.ticket_number);
+  }
+  return sorted;
 }
 
 function renderTable(rows){
+  const dupIds = getDuplicateIds(allRows);
+  let visible = sortRows(rows);
+  if(dupOnly) visible = visible.filter(r => dupIds.has(r.id));
+
   const body = document.getElementById('tableBody');
-  body.innerHTML = rows.map(r => `
-    <tr>
+  if(visible.length === 0){
+    body.innerHTML = '<tr><td colspan="10" style="text-align:center; color:rgba(243,233,214,0.5); padding:24px;">Aucun résultat.</td></tr>';
+    return;
+  }
+  body.innerHTML = visible.map(r => `
+    <tr class="${dupIds.has(r.id) ? 'dup' : ''}">
       <td class="mono">HB-${String(r.ticket_number).padStart(3,'0')}</td>
       <td>${escapeHtml(r.prenom)}</td>
-      <td>${escapeHtml(r.nom)}</td>
+      <td>${escapeHtml(r.nom)}${dupIds.has(r.id) ? '<span class="badge dup">doublon</span>' : ''}</td>
       <td>${escapeHtml(r.communaute)}</td>
       <td>${escapeHtml(r.ville)}</td>
       <td>${escapeHtml(r.whatsapp)}</td>
@@ -181,6 +314,7 @@ function renderTable(rows){
         <button class="checkin-btn" data-id="${r.id}" data-state="${r.checked_in}">
           ${r.checked_in ? 'annuler' : 'marquer présent'}
         </button>
+        <button class="delete-btn" data-id="${r.id}" data-name="${escapeHtml(r.prenom + ' ' + r.nom)}">supprimer</button>
       </td>
     </tr>
   `).join('');
@@ -191,6 +325,17 @@ function renderTable(rows){
       const newState = btn.dataset.state !== 'true';
       const { error } = await supabaseClient.from('inscriptions').update({ checked_in: newState }).eq('id', id);
       if(!error) loadData();
+    });
+  });
+
+  body.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      if(!confirm(`Supprimer définitivement l'inscription de ${name} ?`)) return;
+      const { error } = await supabaseClient.from('inscriptions').delete().eq('id', id);
+      if(!error) loadData();
+      else alert("Erreur lors de la suppression.");
     });
   });
 }
@@ -207,7 +352,34 @@ document.getElementById('search').addEventListener('input', (e) => {
   renderTable(filtered);
 });
 
+document.getElementById('sortSelect').addEventListener('change', (e) => {
+  sortMode = e.target.value;
+  renderTable(allRows);
+});
+
+document.getElementById('dupBtn').addEventListener('click', (e) => {
+  dupOnly = !dupOnly;
+  e.target.classList.toggle('active', dupOnly);
+  e.target.textContent = dupOnly ? 'Voir tout le monde' : 'Voir les doublons';
+  renderTable(allRows);
+});
+
 document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+document.getElementById('printBtn').addEventListener('click', () => {
+  const sorted = [...allRows].sort((a,b) => normalize(a.nom).localeCompare(normalize(b.nom)) || normalize(a.prenom).localeCompare(normalize(b.prenom)));
+  document.getElementById('printSub').textContent = sorted.length + ' inscrits — généré le ' + new Date().toLocaleDateString('fr-FR');
+  document.getElementById('printBody').innerHTML = sorted.map((r, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(r.prenom)} ${escapeHtml(r.nom)}</td>
+      <td>${escapeHtml(r.ville)}</td>
+      <td>${escapeHtml(r.communaute)}</td>
+      <td></td>
+    </tr>
+  `).join('');
+  window.print();
+});
 
 document.getElementById('exportBtn').addEventListener('click', () => {
   const headers = ['Ticket','Prenom','Nom','Communaute','Ville','WhatsApp','Email','Decouverte','Inscrit le','Present'];
