@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Je veux Jésus — Holy Brunch</title>
+<title>Décisions — Holy Brunch</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -67,6 +67,16 @@
   .section-title h2{ font-size:1.1rem; }
   .count-pill{ font-family:'Space Mono',monospace; font-size:.75rem; color:var(--forest); }
   .export-btn{ font-size:.8rem; color:var(--forest); background:none; border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; font-family:'Work Sans',sans-serif; }
+
+  .pages-nav{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .pages-nav a{
+    font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+    text-decoration:none; color:var(--forest); background:var(--cream-2);
+    border:1px solid var(--line); padding:8px 14px; border-radius:999px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .pages-nav a:hover{ background:var(--forest); color:#1B1712; }
+  .pages-nav a.current{ background:var(--forest); color:#1B1712; }
 </style>
 </head>
 <body>
@@ -74,7 +84,7 @@
 <div class="login-wrap" id="loginWrap">
   <div class="login-card">
     <h1>Je veux Jésus</h1>
-    <p>Connecte-toi avec ton compte admin pour enregistrer une personne.</p>
+    <p>Connecte-toi avec ton compte admin pour enregistrer une décision.</p>
     <form id="loginForm">
       <div class="field"><label>E-mail</label><input type="email" id="loginEmail" required></div>
       <div class="field"><label>Mot de passe</label><input type="password" id="loginPassword" required></div>
@@ -85,13 +95,14 @@
 </div>
 
 <div class="app-wrap" id="appWrap">
+  <div class="pages-nav"><a href="admin.html">Inscrits</a><a href="scan.html">Scan</a><a href="decisions.html" class="current">Décisions</a><a href="equipe.html">Équipe</a></div>
   <div class="top-bar">
     <h1 style="font-size:1.3rem;">Je veux Jésus</h1>
     <button class="logout" id="logoutBtn">Déconnexion</button>
   </div>
 
   <div class="card">
-    <h2>Je veux Jésus</h2>
+    <h2>Nouvelle décision</h2>
     <form id="decisionForm">
       <div class="row2">
         <div class="field"><label>Prénom</label><input type="text" id="prenom" required></div>
@@ -105,7 +116,7 @@
         <label>Type de décision</label>
         <select id="typeDecision" required>
           <option value="">— Choisir —</option>
-          <option value="Nouvelle naissance">Je veux Jésus</option>
+          <option value="Nouvelle naissance">Je reçois Jésus pour la première fois</option>
           <option value="Renouvellement">Je renouvelle mon engagement</option>
           <option value="Plus d'informations">Je veux en savoir plus</option>
         </select>
@@ -127,8 +138,6 @@
   <button class="export-btn" id="exportBtn" style="margin-bottom:14px;">Exporter en CSV</button>
   <div id="listWrap"></div>
 </div>
-
-<footer>Que Sa Majesté Le Saint-Esprit nous revèle Jésus.</footer>
 
 <script>
 const CONFIG = {
