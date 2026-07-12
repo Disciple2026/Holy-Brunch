@@ -62,6 +62,16 @@
   .manual-row{ display:flex; gap:8px; }
   .manual-row input{ flex:1; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px; background:#F7EFDD; color:#241E17; font-family:'Space Mono',monospace; }
   .manual-row button{ padding:0 20px; border:none; border-radius:10px; background:var(--forest); color:#1B1712; font-weight:600; cursor:pointer; }
+
+  .pages-nav{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .pages-nav a{
+    font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+    text-decoration:none; color:var(--forest); background:var(--cream-2);
+    border:1px solid var(--line); padding:8px 14px; border-radius:999px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .pages-nav a:hover{ background:var(--forest); color:#1B1712; }
+  .pages-nav a.current{ background:var(--forest); color:#1B1712; }
 </style>
 </head>
 <body>
@@ -80,6 +90,7 @@
 </div>
 
 <div class="scan-wrap" id="scanWrap">
+  <div class="pages-nav"><a href="admin.html">Inscrits</a><a href="scan.html" class="current">Scan</a><a href="decisions.html">Décisions</a><a href="equipe.html">Équipe</a></div>
   <div class="top-bar">
     <span class="stat-pill mono" id="presentCount">– présents</span>
     <button class="logout" id="logoutBtn">Déconnexion</button>
@@ -100,8 +111,6 @@
     </div>
   </div>
 </div>
-
-<footer>Que Sa Majesté Le Saint-Esprit nous revèle Jésus.</footer>
 
 <script>
 const CONFIG = {
