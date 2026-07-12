@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Équipe — Holy Brunch</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --cream:#121110; --cream-2:#1E1A15; --forest:#C9A227; --forest-2:#F3E9D6;
+    --gold:#C9A227; --terracotta:#A6231F; --ink:#F3E9D6; --line:rgba(201,162,39,0.22);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Work Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2{ font-family:'Fraunces',serif; color:var(--forest-2); margin:0; }
+  .mono{ font-family:'Space Mono',monospace; }
+
+  .login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:18px;
+    padding:40px; max-width:380px; width:100%; box-shadow:0 18px 40px -18px rgba(0,0,0,0.6);
+  }
+  .login-card h1{ font-size:1.6rem; margin-bottom:6px; }
+  .login-card p{ color:rgba(243,233,214,0.6); font-size:.9rem; margin-bottom:24px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--forest); margin-bottom:6px; }
+  .field input, .field select{
+    width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:10px;
+    font-family:'Work Sans',sans-serif; font-size:.95rem; background:#F7EFDD; color:#241E17;
+  }
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--terracotta); }
+  .btn{ padding:14px 22px; border:none; border-radius:999px; background:var(--terracotta); color:#FFF7F0; font-weight:600; cursor:pointer; font-family:'Work Sans',sans-serif; }
+  .btn:hover{ background:var(--forest); color:#1B1712; }
+  .btn.full{ width:100%; }
+  .err{ color:#D9614A; font-size:.85rem; margin-top:10px; text-align:center; min-height:1.2em; }
+  .ok-msg{ color:#3F8F5C; font-size:.85rem; margin-top:10px; text-align:center; min-height:1.2em; }
+
+  .app-wrap{ display:none; max-width:760px; margin:0 auto; padding:24px 16px 60px; }
+  .top-bar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .logout{ font-size:.8rem; color:#D9614A; background:none; border:none; cursor:pointer; text-decoration:underline; font-family:'Work Sans',sans-serif; }
+
+  .card{
+    background:var(--cream-2); border:1px solid var(--line); border-radius:18px;
+    padding:28px; margin-bottom:24px; box-shadow:0 18px 40px -18px rgba(0,0,0,0.6);
+  }
+  .card h2{ font-size:1.3rem; margin-bottom:18px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media (max-width:560px){ .row2, .row3{ grid-template-columns:1fr; } }
+
+  .role-group{ margin-bottom:22px; }
+  .role-title{
+    display:flex; align-items:center; gap:10px; margin-bottom:10px;
+    font-family:'Space Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--forest);
+  }
+  .role-count{ background:rgba(201,162,39,0.14); color:var(--gold); padding:2px 9px; border-radius:999px; font-size:.7rem; }
+  .member{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--cream-2); border:1px solid var(--line); border-radius:10px;
+    padding:10px 14px; margin-bottom:8px;
+  }
+  .member .m-name{ font-weight:600; }
+  .member .m-wa{ font-size:.78rem; color:rgba(243,233,214,0.6); margin-left:8px; }
+  .member .m-notes{ font-size:.78rem; color:rgba(243,233,214,0.5); }
+  .member .del{ border:none; background:none; color:#D9614A; cursor:pointer; font-size:.78rem; text-decoration:underline; font-family:'Work Sans',sans-serif; }
+
+  .export-btn{ font-size:.8rem; color:var(--forest); background:none; border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; font-family:'Work Sans',sans-serif; margin-bottom:16px; }
+
+  .pages-nav{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .pages-nav a{
+    font-family:'Space Mono',monospace; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+    text-decoration:none; color:var(--forest); background:var(--cream-2);
+    border:1px solid var(--line); padding:8px 14px; border-radius:999px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .pages-nav a:hover{ background:var(--forest); color:#1B1712; }
+  .pages-nav a.current{ background:var(--forest); color:#1B1712; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>Équipe</h1>
+    <p>Connecte-toi avec ton compte admin pour gérer l'équipe et les rôles.</p>
+    <form id="loginForm">
+      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" required></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="loginPassword" required></div>
+      <button class="btn full" type="submit">Se connecter</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+
+<div class="app-wrap" id="appWrap">
+  <div class="pages-nav"><a href="admin.html">Inscrits</a><a href="scan.html">Scan</a><a href="decisions.html">Décisions</a><a href="equipe.html" class="current">Équipe</a></div>
+  <div class="top-bar">
+    <h1 style="font-size:1.3rem;">Équipe & rôles</h1>
+    <button class="logout" id="logoutBtn">Déconnexion</button>
+  </div>
+
+  <div class="card">
+    <h2>Ajouter un membre</h2>
+    <form id="memberForm">
+      <div class="row3">
+        <div class="field"><label>Nom complet</label><input type="text" id="nom" required></div>
+        <div class="field"><label>WhatsApp <span style="text-transform:none; color:rgba(243,233,214,0.4);">(facultatif)</span></label><input type="tel" id="whatsapp"></div>
+        <div class="field">
+          <label>Rôle</label>
+          <select id="role" required>
+            <option value="">— Choisir —</option>
+            <option value="Organisateur">Organisateur</option>
+            <option value="Chantre / Louange">Chantre / Louange</option>
+            <option value="Accueil">Accueil</option>
+            <option value="Sécurité">Sécurité</option>
+            <option value="Logistique">Logistique</option>
+            <option value="Cuisine">Cuisine</option>
+            <option value="Photographe / Vidéaste">Photographe / Vidéaste</option>
+            <option value="Prière / Accompagnement">Prière / Accompagnement</option>
+            <option value="Campeur">Campeur</option>
+            <option value="Bénévole">Bénévole</option>
+            <option value="__other__">Autre (préciser)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="otherRoleWrap" style="display:none;">
+        <label>Précise le rôle</label>
+        <input type="text" id="otherRole">
+      </div>
+      <div class="field">
+        <label>Notes <span style="text-transform:none; color:rgba(243,233,214,0.4);">(créneau, mission précise...)</span></label>
+        <input type="text" id="notes">
+      </div>
+      <button type="submit" class="btn" id="submitBtn">Ajouter à l'équipe</button>
+      <div class="err" id="formErr"></div>
+      <div class="ok-msg" id="formOk"></div>
+    </form>
+  </div>
+
+  <button class="export-btn" id="exportBtn">Exporter en CSV</button>
+  <div id="rolesWrap"></div>
+</div>
+
+<script>
+const CONFIG = {
+  SUPABASE_URL: "https://kmnavmsbdahwqftjhvzj.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8"
+};
+const supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+let allMembers = [];
+
+async function checkSession(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session){ showApp(); loadMembers(); }
+}
+checkSession();
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){ errEl.textContent = "Identifiants incorrects."; return; }
+  showApp();
+  loadMembers();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  location.reload();
+});
+
+function showApp(){
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'block';
+}
+
+document.getElementById('role').addEventListener('change', (e) => {
+  document.getElementById('otherRoleWrap').style.display = e.target.value === '__other__' ? 'block' : 'none';
+});
+
+document.getElementById('memberForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('formErr');
+  const okEl = document.getElementById('formOk');
+  errEl.textContent = ''; okEl.textContent = '';
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+
+  const roleVal = document.getElementById('role').value;
+  const finalRole = roleVal === '__other__' ? document.getElementById('otherRole').value.trim() : roleVal;
+
+  const payload = {
+    nom: document.getElementById('nom').value.trim(),
+    whatsapp: document.getElementById('whatsapp').value.trim() || null,
+    role: finalRole,
+    notes: document.getElementById('notes').value.trim() || null
+  };
+
+  if(!payload.role){
+    errEl.textContent = "Précise un rôle.";
+    submitBtn.disabled = false;
+    return;
+  }
+
+  const { error } = await supabaseClient.from('equipe').insert(payload);
+  submitBtn.disabled = false;
+
+  if(error){ errEl.textContent = "Erreur, réessaie."; console.error(error); return; }
+
+  okEl.textContent = "Ajouté ✔";
+  document.getElementById('memberForm').reset();
+  document.getElementById('otherRoleWrap').style.display = 'none';
+  loadMembers();
+  setTimeout(() => { okEl.textContent = ''; }, 2500);
+});
+
+async function loadMembers(){
+  const { data, error } = await supabaseClient
+    .from('equipe')
+    .select('*')
+    .order('role', { ascending: true });
+  if(error){ console.error(error); return; }
+  allMembers = data;
+  renderRoles(data);
+}
+
+function renderRoles(rows){
+  const groups = {};
+  rows.forEach(r => { (groups[r.role] ||= []).push(r); });
+
+  const wrap = document.getElementById('rolesWrap');
+  if(rows.length === 0){
+    wrap.innerHTML = '<p style="color:rgba(243,233,214,0.5); font-size:.9rem;">Aucun membre pour le moment.</p>';
+    return;
+  }
+
+  wrap.innerHTML = Object.entries(groups).map(([role, members]) => `
+    <div class="role-group">
+      <div class="role-title">${escapeHtml(role)} <span class="role-count">${members.length}</span></div>
+      ${members.map(m => `
+        <div class="member">
+          <div>
+            <span class="m-name">${escapeHtml(m.nom)}</span>
+            ${m.whatsapp ? `<span class="m-wa">💬 ${escapeHtml(m.whatsapp)}</span>` : ''}
+            ${m.notes ? `<div class="m-notes">${escapeHtml(m.notes)}</div>` : ''}
+          </div>
+          <button class="del" data-id="${m.id}">retirer</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('.del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if(!confirm('Retirer ce membre de l\'équipe ?')) return;
+      const { error } = await supabaseClient.from('equipe').delete().eq('id', btn.dataset.id);
+      if(!error) loadMembers();
+    });
+  });
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const headers = ['Nom','WhatsApp','Role','Notes'];
+  const lines = [headers.join(',')];
+  allMembers.forEach(r => {
+    lines.push([r.nom, r.whatsapp || '', r.role, r.notes || ''].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'equipe-holy-brunch.csv';
+  a.click();
+});
+</script>
+</body>
+</html>
