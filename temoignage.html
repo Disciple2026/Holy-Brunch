@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Témoignages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green-deep: #142B22;
+  --green-mid: #1E4534;
+  --gold: #E8A93A;
+  --gold-light: #F6D77A;
+  --red: #C23B3B;
+  --cream: #F4EDE0;
+  --black: #0E0F0C;
+  --font-display: 'Anton', sans-serif;
+  --font-serif: 'Fraunces', serif;
+  --font-body: 'Work Sans', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--black);
+}
+
+.topbar {
+  background: var(--green-deep);
+  color: var(--cream);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid rgba(244,237,224,0.4);
+  color: var(--cream);
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+/* ---------- LOGIN ---------- */
+.login-wrap {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 90% at 50% 0%, #2A5A44 0%, var(--green-deep) 45%, var(--black) 100%);
+}
+
+.login-card {
+  background: rgba(244,237,224,0.06);
+  border: 1px solid rgba(232,169,58,0.3);
+  border-radius: 18px;
+  padding: 32px 26px;
+  max-width: 380px;
+  width: 100%;
+  color: var(--cream);
+}
+
+.login-card h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--gold-light); }
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(244,237,224,0.25);
+  background: rgba(244,237,224,0.08);
+  color: var(--cream);
+  font-size: 1rem;
+}
+
+.btn-primary {
+  display: block;
+  width: 100%;
+  background: var(--gold);
+  color: var(--black);
+  font-weight: 700;
+  border: none;
+  padding: 14px;
+  border-radius: 100px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.login-error {
+  color: var(--red);
+  background: rgba(194,59,59,0.15);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+
+/* ---------- LISTE ---------- */
+.content { max-width: 780px; margin: 0 auto; padding: 24px 20px 60px; }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.count-line { color: #556; font-size: 0.9rem; margin: 0; }
+
+.search-input {
+  padding: 9px 14px;
+  border-radius: 100px;
+  border: 1px solid #ddd6c4;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  min-width: 220px;
+}
+
+.temoignage-card {
+  background: #fff;
+  border: 1px solid rgba(20,43,34,0.08);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 18px rgba(20,43,34,0.05);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.temoignage-card:hover { box-shadow: 0 10px 26px rgba(20,43,34,0.09); }
+
+.temoignage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.temoignage-nom { font-weight: 700; color: var(--green-deep); }
+.temoignage-date { font-size: 0.75rem; color: #888; }
+
+.temoignage-message {
+  margin: 0 0 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: #2a2a24;
+  cursor: pointer;
+}
+
+.temoignage-message.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--cream);
+  border: 1px solid #ddd6c4;
+  color: var(--green-deep);
+  padding: 7px 14px;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.15s ease;
+}
+
+.action-btn:hover { background: #efe6d3; }
+.action-btn.danger { color: var(--red); }
+.action-btn.danger:hover { background: rgba(194,59,59,0.08); }
+
+.empty-state { text-align: center; color: #888; padding: 60px 20px; }
+
+/* ---------- MODAL LECTURE ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14,15,12,0.6);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal-card {
+  background: linear-gradient(180deg, var(--green-deep), var(--black));
+  color: var(--cream);
+  border: 1px solid rgba(232,169,58,0.3);
+  border-radius: 20px;
+  max-width: 540px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 34px 30px;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: var(--cream);
+  font-size: 1.3rem;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.modal-close:hover { opacity: 1; }
+
+.modal-nom { font-weight: 700; color: var(--gold-light); margin: 0 0 4px; }
+.modal-date { font-size: 0.78rem; opacity: 0.6; margin: 0 0 22px; }
+.modal-message {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  margin: 0 0 26px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--green-deep);
+  color: var(--cream);
+  padding: 12px 22px;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="login-wrap" class="login-wrap">
+    <div class="login-card">
+      <h2>Espace admin</h2>
+      <p class="login-error" id="login-error" hidden></p>
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-primary" id="login-btn">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" hidden>
+    <div class="topbar">
+      <h1>Témoignages</h1>
+      <button class="btn-logout" id="logout-btn">Se déconnecter</button>
+    </div>
+    <div class="content">
+      <div class="toolbar">
+        <p class="count-line" id="count-line"></p>
+        <input type="text" class="search-input" id="search-input" placeholder="Rechercher un nom ou un mot…">
+      </div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL LECTURE -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-card">
+      <button class="modal-close" id="modal-close">✕</button>
+      <p class="modal-nom" id="modal-nom"></p>
+      <p class="modal-date" id="modal-date"></p>
+      <p class="modal-message" id="modal-message"></p>
+      <div class="card-actions">
+        <button class="action-btn" id="modal-share">📤 Partager</button>
+        <button class="action-btn danger" id="modal-delete">🗑️ Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://kmnavmsbdahwqftjhvzj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbmF2bXNiZGFod3FmdGpodnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODc5MzAsImV4cCI6MjA5OTE2MzkzMH0.sNjJUOgLOuwGfv8k9lDSxwDAD2wdxQp4V-JIZXAdIF8";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginWrap = document.getElementById("login-wrap");
+    const dashboard = document.getElementById("dashboard");
+    const loginForm = document.getElementById("login-form");
+    const loginError = document.getElementById("login-error");
+
+    let allTemoignages = [];
+
+    async function checkSession() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) { showDashboard(); }
+      else { loginWrap.hidden = false; dashboard.hidden = true; }
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginError.hidden = true;
+      const btn = document.getElementById("login-btn");
+      btn.disabled = true;
+      btn.textContent = "Connexion…";
+
+      const { error } = await sb.auth.signInWithPassword({
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value
+      });
+
+      btn.disabled = false;
+      btn.textContent = "Se connecter";
+
+      if (error) {
+        loginError.textContent = "Email ou mot de passe incorrect.";
+        loginError.hidden = false;
+        return;
+      }
+      showDashboard();
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await sb.auth.signOut();
+      loginWrap.hidden = false;
+      dashboard.hidden = true;
+    });
+
+    async function showDashboard() {
+      loginWrap.hidden = true;
+      dashboard.hidden = false;
+      await loadTemoignages();
+    }
+
+    async function loadTemoignages() {
+      const list = document.getElementById("list");
+      list.innerHTML = "Chargement…";
+
+      const { data, error } = await sb.from("temoignages").select("*").order("created_at", { ascending: false });
+
+      if (error) {
+        list.innerHTML = `<p class="empty-state">Erreur de chargement : ${escapeHtml(error.message)}</p>`;
+        return;
+      }
+
+      allTemoignages = data || [];
+      renderList(allTemoignages);
+    }
+
+    function renderList(items) {
+      const list = document.getElementById("list");
+      const countLine = document.getElementById("count-line");
+
+      if (items.length === 0) {
+        countLine.textContent = "";
+        list.innerHTML = '<p class="empty-state">Aucun témoignage pour le moment.</p>';
+        return;
+      }
+
+      countLine.textContent = `${items.length} témoignage${items.length > 1 ? "s" : ""}`;
+
+      list.innerHTML = items.map((t) => {
+        const date = formatDate(t.created_at);
+        const nom = t.nom ? escapeHtml(t.nom) : "Anonyme";
+        return `
+          <div class="temoignage-card" data-id="${t.id}">
+            <div class="temoignage-header">
+              <span class="temoignage-nom">${nom}</span>
+              <span class="temoignage-date">${date}</span>
+            </div>
+            <p class="temoignage-message clamp" data-open-id="${t.id}">${escapeHtml(t.message)}</p>
+            <div class="card-actions">
+              <button class="action-btn" data-open-id="${t.id}">📖 Lire</button>
+              <button class="action-btn" data-share-id="${t.id}">📤 Partager</button>
+              <button class="action-btn danger" data-delete-id="${t.id}">🗑️ Supprimer</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /* Recherche */
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) { renderList(allTemoignages); return; }
+      const filtered = allTemoignages.filter((t) =>
+        (t.nom || "").toLowerCase().includes(q) || t.message.toLowerCase().includes(q)
+      );
+      renderList(filtered);
+    });
+
+    /* Délégation clics : lire / partager / supprimer */
+    document.getElementById("list").addEventListener("click", async (e) => {
+      const openId = e.target.closest("[data-open-id]")?.dataset.openId;
+      const shareId = e.target.closest("[data-share-id]")?.dataset.shareId;
+      const deleteId = e.target.closest("[data-delete-id]")?.dataset.deleteId;
+
+      if (openId) openModal(openId);
+      if (shareId) shareTemoignage(shareId);
+      if (deleteId) await deleteTemoignage(deleteId);
+    });
+
+    /* Modal lecture */
+    const modalOverlay = document.getElementById("modal-overlay");
+    let currentModalId = null;
+
+    function openModal(id) {
+      const t = allTemoignages.find((x) => x.id === id);
+      if (!t) return;
+      currentModalId = id;
+      document.getElementById("modal-nom").textContent = t.nom || "Anonyme";
+      document.getElementById("modal-date").textContent = formatDate(t.created_at);
+      document.getElementById("modal-message").textContent = t.message;
+      modalOverlay.classList.add("active");
+    }
+
+    document.getElementById("modal-close").addEventListener("click", () => modalOverlay.classList.remove("active"));
+    modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) modalOverlay.classList.remove("active"); });
+
+    document.getElementById("modal-share").addEventListener("click", () => shareTemoignage(currentModalId));
+    document.getElementById("modal-delete").addEventListener("click", async () => {
+      await deleteTemoignage(currentModalId);
+      modalOverlay.classList.remove("active");
+    });
+
+    /* Partager */
+    async function shareTemoignage(id) {
+      const t = allTemoignages.find((x) => x.id === id);
+      if (!t) return;
+      const nom = t.nom || "Anonyme";
+      const text = `« ${t.message} »\n— ${nom}, Holy Brunch × Christ's Lovers`;
+
+      if (navigator.share) {
+        try { await navigator.share({ text }); }
+        catch (err) { /* annulé par l'utilisateur, on ignore */ }
+      } else {
+        await navigator.clipboard.writeText(text);
+        showToast("Témoignage copié dans le presse-papier");
+      }
+    }
+
+    /* Supprimer */
+    async function deleteTemoignage(id) {
+      if (!confirm("Supprimer définitivement ce témoignage ?")) return;
+      const { error } = await sb.from("temoignages").delete().eq("id", id);
+      if (error) {
+        showToast("Erreur lors de la suppression");
+        return;
+      }
+      allTemoignages = allTemoignages.filter((t) => t.id !== id);
+      renderList(allTemoignages);
+      showToast("Témoignage supprimé");
+    }
+
+    /* Toast */
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    checkSession();
+  </script>
+</body>
+</html>
